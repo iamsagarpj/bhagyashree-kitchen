@@ -143,7 +143,15 @@
   .header-cart-btn .badge.show{ display:flex; }
   .hamburger{ display:none; flex-direction:column; gap:5px; }
   .hamburger span{ width:22px; height:2px; background:var(--text); border-radius:2px; }
-  .mobile-nav{ display:none; }
+  .mobile-nav-backdrop{ display:none; position:fixed; inset:0; max-width:480px; margin-left:auto; margin-right:auto; background:rgba(20,10,5,.5); z-index:1150; }
+  .mobile-nav-backdrop.show{ display:block; }
+  .mn-head{ display:flex; align-items:center; justify-content:space-between; padding:18px 20px; border-bottom:1px solid #f4ece2; flex-shrink:0; background:#fffaf3; }
+  .mn-head-title{ font-weight:800; font-size:16px; color:var(--primary); }
+  .mn-close{ width:32px; height:32px; border-radius:50%; background:#f4ece2; display:flex; align-items:center; justify-content:center; font-size:14px; color:#555; flex-shrink:0; transition:background .2s ease; }
+  .mn-close:hover, .mn-close:active{ background:#eadfcf; }
+  .mobile-nav-links{ flex:1; overflow-y:auto; overflow-x:hidden; padding:10px 18px calc(18px + env(safe-area-inset-bottom)); }
+  .mobile-nav-links a{ display:block; padding:14px 4px; font-weight:600; font-size:14.5px; border-bottom:1px solid #f6efe4; }
+  .mobile-nav-links a:active{ color:var(--primary); }
 
   /* ---------- Hero (carousel) ---------- */
   .hero{ position:relative; min-height:78vh; min-height:78dvh; display:flex; align-items:flex-end; padding:0 16px 40px; overflow:hidden; }
@@ -293,13 +301,13 @@
   /* ---------- Checkout / Cart Sheet (single flow, all breakpoints) ---------- */
   .sheet-backdrop{ display:none; position:fixed; inset:0; max-width:480px; margin-left:auto; margin-right:auto; background:rgba(20,10,5,.55); z-index:1400; }
   .sheet-backdrop.show{ display:block; }
-  .cart-sheet{ position:fixed; left:0; right:0; bottom:0; max-width:480px; margin-left:auto; margin-right:auto; z-index:1500; background:#fff; border-radius:24px 24px 0 0; max-height:92vh; max-height:92dvh; display:flex; flex-direction:column; transform:translateY(100%); transition:transform .35s cubic-bezier(.22,1,.36,1); box-shadow:0 -12px 40px rgba(0,0,0,.2); }
+  .cart-sheet{ position:fixed; left:0; right:0; bottom:0; max-width:480px; margin-left:auto; margin-right:auto; z-index:1500; background:#fff; border-radius:24px 24px 0 0; max-height:92vh; max-height:92dvh; overflow-x:hidden; display:flex; flex-direction:column; transform:translateY(100%); transition:transform .35s cubic-bezier(.22,1,.36,1); box-shadow:0 -12px 40px rgba(0,0,0,.2); }
   .cart-sheet.open{ transform:translateY(0); }
   .sheet-handle{ width:40px; height:5px; background:#eadfcf; border-radius:10px; margin:12px auto 6px; flex-shrink:0; }
   .sheet-head{ display:flex; align-items:center; justify-content:space-between; padding:8px 22px 12px; flex-shrink:0; border-bottom:1px solid #f4ead9; }
   .sheet-head h3{ font-size:17px; font-weight:800; }
   .sheet-close{ width:32px; height:32px; border-radius:50%; background:#f4ead9; font-size:16px; display:flex; align-items:center; justify-content:center; }
-  .sheet-body{ overflow-y:auto; -webkit-overflow-scrolling:touch; overscroll-behavior:contain; padding:16px 22px 10px; flex:1; }
+  .sheet-body{ overflow-y:auto; overflow-x:hidden; -webkit-overflow-scrolling:touch; overscroll-behavior:contain; padding:16px 22px 10px; flex:1; }
   .sheet-section-title{ font-size:13.5px; font-weight:800; margin:16px 0 10px; color:#8a5a2a; text-transform:uppercase; letter-spacing:.5px; }
   .sheet-section-title:first-child{ margin-top:0; }
   .cart-items{ }
@@ -342,9 +350,8 @@
   nav.main-nav{ display:none; }
   .lang-switch.desktop-only{ display:none; }
   .hamburger{ display:flex; }
-  .mobile-nav{ position:fixed; top:0; right:max(0px, calc((100vw - 480px) / 2)); bottom:0; width:76%; max-width:300px; background:#fff; z-index:1200; padding:24px; transform:translateX(100%); transition:transform .35s ease; box-shadow:-10px 0 40px rgba(0,0,0,.15); }
-  .mobile-nav.open{ transform:translateX(0); display:block; }
-  .mobile-nav a{ display:block; padding:13px 0; font-weight:600; border-bottom:1px solid #f4ece2; }
+  .mobile-nav{ display:flex; flex-direction:column; position:fixed; top:0; right:max(0px, calc((100vw - 480px) / 2)); bottom:0; width:78%; max-width:300px; background:#fff; z-index:1200; padding:0; transform:translateX(100%); visibility:hidden; transition:transform .35s cubic-bezier(.22,1,.36,1), visibility .35s; box-shadow:-10px 0 40px rgba(0,0,0,.18); border-radius:18px 0 0 18px; overflow:hidden; }
+  .mobile-nav.open{ transform:translateX(0); visibility:visible; }
   .mobile-nav .lang-switch{ margin-top:18px; }
   .about-grid{ grid-template-columns:1fr; }
   .contact-grid{ grid-template-columns:1fr; }
@@ -398,16 +405,23 @@
       <button class="hamburger" aria-label="Open menu" aria-expanded="false" id="hamburgerBtn" onclick="toggleMobileNav()"><span></span><span></span><span></span></button>
     </div>
   </div>
-  <nav class="mobile-nav" id="mobileNav" aria-label="Mobile navigation">
-    <a href="#home" onclick="toggleMobileNav()" data-i18n="nav_home">होम</a>
-    <a href="#menu" onclick="toggleMobileNav()" data-i18n="nav_menu">मेनू</a>
-    <a href="#thalis" onclick="toggleMobileNav()" data-i18n="nav_thalis">स्पेशल थाळी</a>
-    <a href="#how" onclick="toggleMobileNav()" data-i18n="nav_how">ऑर्डर कशी करावी</a>
-    <a href="#reviews" onclick="toggleMobileNav()" data-i18n="nav_reviews">अभिप्राय</a>
-    <a href="#contact" onclick="toggleMobileNav()" data-i18n="nav_contact">संपर्क</a>
+  <div class="mobile-nav-backdrop" id="mobileNavBackdrop" onclick="closeMobileNav()"></div>
+  <nav class="mobile-nav" id="mobileNav" aria-label="Mobile navigation" aria-hidden="true">
+    <div class="mn-head">
+      <span class="mn-head-title" data-i18n="nav_menu">मेनू</span>
+      <button class="mn-close" onclick="closeMobileNav()" aria-label="Close menu">✕</button>
+    </div>
+    <div class="mobile-nav-links">
+    <a href="#home" onclick="closeMobileNav()" data-i18n="nav_home">होम</a>
+    <a href="#menu" onclick="closeMobileNav()" data-i18n="nav_menu">मेनू</a>
+    <a href="#thalis" onclick="closeMobileNav()" data-i18n="nav_thalis">स्पेशल थाळी</a>
+    <a href="#how" onclick="closeMobileNav()" data-i18n="nav_how">ऑर्डर कशी करावी</a>
+    <a href="#reviews" onclick="closeMobileNav()" data-i18n="nav_reviews">अभिप्राय</a>
+    <a href="#contact" onclick="closeMobileNav()" data-i18n="nav_contact">संपर्क</a>
     <div class="lang-switch">
       <button id="langMrBtnM" class="active" onclick="setLanguage('mr')">मराठी</button>
       <button id="langEnBtnM" onclick="setLanguage('en')">EN</button>
+    </div>
     </div>
   </nav>
 </header>
@@ -956,13 +970,31 @@ function applyLanguageStrings(lang){
 }
 
 /* ================= MOBILE NAV ================= */
+function openMobileNav(){
+  const nav = document.getElementById('mobileNav');
+  if (nav.classList.contains('open')) return;
+  nav.classList.add('open');
+  nav.setAttribute('aria-hidden', 'false');
+  document.getElementById('mobileNavBackdrop').classList.add('show');
+  document.getElementById('hamburgerBtn').setAttribute('aria-expanded', 'true');
+  lockBodyScroll();
+}
+function closeMobileNav(){
+  const nav = document.getElementById('mobileNav');
+  if (!nav.classList.contains('open')) return;
+  nav.classList.remove('open');
+  nav.setAttribute('aria-hidden', 'true');
+  document.getElementById('mobileNavBackdrop').classList.remove('show');
+  document.getElementById('hamburgerBtn').setAttribute('aria-expanded', 'false');
+  unlockBodyScroll();
+}
 function toggleMobileNav(){
   const nav = document.getElementById('mobileNav');
-  const btn = document.getElementById('hamburgerBtn');
-  const isOpen = nav.classList.toggle('open');
-  btn.setAttribute('aria-expanded', isOpen);
-  if (isOpen) lockBodyScroll(); else unlockBodyScroll();
+  if (nav.classList.contains('open')) closeMobileNav(); else openMobileNav();
 }
+document.addEventListener('keydown', (e)=>{
+  if (e.key === 'Escape'){ closeMobileNav(); closeCartSheet(); }
+});
 
 /* ================= HEADER SCROLL ================= */
 function setupHeaderScroll(){
@@ -1169,12 +1201,16 @@ function unlockBodyScroll(){
   }
 }
 function openCartSheet(){
-  document.getElementById('cartSheet').classList.add('open');
+  const sheet = document.getElementById('cartSheet');
+  if (sheet.classList.contains('open')) return;
+  sheet.classList.add('open');
   document.getElementById('sheetBackdrop').classList.add('show');
   lockBodyScroll();
 }
 function closeCartSheet(){
-  document.getElementById('cartSheet').classList.remove('open');
+  const sheet = document.getElementById('cartSheet');
+  if (!sheet.classList.contains('open')) return;
+  sheet.classList.remove('open');
   document.getElementById('sheetBackdrop').classList.remove('show');
   unlockBodyScroll();
 }
