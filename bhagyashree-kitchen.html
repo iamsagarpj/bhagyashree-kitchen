@@ -2,7 +2,7 @@
 <html lang="mr">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>Bhagyashree Kitchen | घरगुती चव, आईच्या हातची आठवण</title>
 <meta name="description" content="Bhagyashree Kitchen, सातारा — घरगुती चव, आईच्या हातची आठवण. अस्सल चिकन आणि मटण थाळी, रोज ताजी बनवलेली. आत्ताच व्हॉट्सअॅपवर ऑर्डर करा. Authentic homemade Chicken & Mutton Thalis in Satara — order on WhatsApp.">
 <meta name="keywords" content="Maharashtrian food Satara, घरगुती जेवण सातारा, chicken thali, mutton thali, tiffin service, whatsapp order, homemade food, bhakri, अस्सल थाळी">
@@ -69,8 +69,9 @@
   *{ box-sizing:border-box; margin:0; padding:0; }
   html{ scroll-behavior:smooth; }
   html, body{ width:100%; overflow-x:hidden; }
-  body{ background:#e9ded0; color:var(--text); font-family:var(--ff-mr); line-height:1.6; -webkit-font-smoothing:antialiased; -webkit-text-size-adjust:100%; text-size-adjust:100%; }
+  body{ background:#e9ded0; color:var(--text); font-family:var(--ff-mr); line-height:1.6; -webkit-font-smoothing:antialiased; -webkit-text-size-adjust:100%; text-size-adjust:100%; -webkit-tap-highlight-color:transparent; }
   html[lang="en"] body{ font-family:var(--ff-en); }
+  button, a, input, textarea, select{ touch-action:manipulation; -webkit-tap-highlight-color:transparent; }
   /* Fixed mobile-app width shell — the site always renders at a phone-sized
      column (max 480px) no matter how wide the real screen is. On phones this
      fills the full width as normal; on tablets/desktops it stays centered like
@@ -115,7 +116,12 @@
   .skeleton{ background:linear-gradient(90deg,#f1e6da 25%,#fbf1e6 37%,#f1e6da 63%); background-size:400px 100%; animation:shimmer 1.4s infinite; border-radius:inherit; }
 
   /* ---------- Header ---------- */
-  header{ position:sticky; top:0; z-index:1000; background:rgba(255,248,241,0.92); backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px); border-bottom:1px solid rgba(178,34,34,0.08); transition:box-shadow .3s ease; }
+  /* position:sticky + backdrop-filter on the SAME element is a known iOS
+     Safari bug that silently breaks the stickiness. Fix: the header itself
+     stays sticky with no filter; the translucent blur lives on a ::before
+     layer behind its content instead. */
+  header{ position:sticky; top:0; z-index:1000; border-bottom:1px solid rgba(178,34,34,0.08); transition:box-shadow .3s ease; isolation:isolate; }
+  header::before{ content:""; position:absolute; inset:0; z-index:-1; background:rgba(255,248,241,0.92); backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px); }
   header.scrolled{ box-shadow:0 8px 22px rgba(0,0,0,.06); }
   .header-inner{ max-width:1400px; margin:0 auto; display:flex; align-items:center; justify-content:space-between; padding:10px 16px; gap:10px; }
   .logo{ display:flex; align-items:center; gap:9px; font-weight:800; font-size:17px; color:var(--primary); min-width:0; }
@@ -293,7 +299,7 @@
   .sheet-head{ display:flex; align-items:center; justify-content:space-between; padding:8px 22px 12px; flex-shrink:0; border-bottom:1px solid #f4ead9; }
   .sheet-head h3{ font-size:17px; font-weight:800; }
   .sheet-close{ width:32px; height:32px; border-radius:50%; background:#f4ead9; font-size:16px; display:flex; align-items:center; justify-content:center; }
-  .sheet-body{ overflow-y:auto; padding:16px 22px 10px; flex:1; }
+  .sheet-body{ overflow-y:auto; -webkit-overflow-scrolling:touch; overscroll-behavior:contain; padding:16px 22px 10px; flex:1; }
   .sheet-section-title{ font-size:13.5px; font-weight:800; margin:16px 0 10px; color:#8a5a2a; text-transform:uppercase; letter-spacing:.5px; }
   .sheet-section-title:first-child{ margin-top:0; }
   .cart-items{ }
@@ -955,6 +961,7 @@ function toggleMobileNav(){
   const btn = document.getElementById('hamburgerBtn');
   const isOpen = nav.classList.toggle('open');
   btn.setAttribute('aria-expanded', isOpen);
+  if (isOpen) lockBodyScroll(); else unlockBodyScroll();
 }
 
 /* ================= HEADER SCROLL ================= */
@@ -1133,15 +1140,43 @@ function updateCartUI(){
 }
 
 /* ================= CART SHEET ================= */
+/* Robust background-scroll lock (plain overflow:hidden doesn't stop
+   touch-drag scrolling of the page behind a sheet on iOS Safari — pinning
+   the body via position:fixed does, and this restores the exact scroll
+   position afterwards so the page doesn't jump). */
+let _scrollLockY = 0;
+let _scrollLockDepth = 0;
+function lockBodyScroll(){
+  if (_scrollLockDepth === 0){
+    _scrollLockY = window.scrollY || window.pageYOffset || 0;
+    document.body.style.position = 'fixed';
+    document.body.style.top = (-_scrollLockY) + 'px';
+    document.body.style.left = '0';
+    document.body.style.right = '0';
+    document.body.style.width = '100%';
+  }
+  _scrollLockDepth++;
+}
+function unlockBodyScroll(){
+  _scrollLockDepth = Math.max(0, _scrollLockDepth - 1);
+  if (_scrollLockDepth === 0){
+    document.body.style.position = '';
+    document.body.style.top = '';
+    document.body.style.left = '';
+    document.body.style.right = '';
+    document.body.style.width = '';
+    window.scrollTo(0, _scrollLockY);
+  }
+}
 function openCartSheet(){
   document.getElementById('cartSheet').classList.add('open');
   document.getElementById('sheetBackdrop').classList.add('show');
-  document.body.style.overflow = 'hidden';
+  lockBodyScroll();
 }
 function closeCartSheet(){
   document.getElementById('cartSheet').classList.remove('open');
   document.getElementById('sheetBackdrop').classList.remove('show');
-  document.body.style.overflow = '';
+  unlockBodyScroll();
 }
 function togglePayAccordion(){
   const body = document.getElementById('payAccordionBody');
