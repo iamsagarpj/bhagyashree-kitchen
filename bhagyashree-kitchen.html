@@ -116,13 +116,16 @@
   .skeleton{ background:linear-gradient(90deg,#f1e6da 25%,#fbf1e6 37%,#f1e6da 63%); background-size:400px 100%; animation:shimmer 1.4s infinite; border-radius:inherit; }
 
   /* ---------- Header ---------- */
-  /* position:sticky + backdrop-filter on the SAME element is a known iOS
-     Safari bug that silently breaks the stickiness. Fix: the header itself
-     stays sticky with no filter; the translucent blur lives on a ::before
-     layer behind its content instead. */
-  header{ position:sticky; top:0; z-index:1000; border-bottom:1px solid rgba(178,34,34,0.08); transition:box-shadow .3s ease; isolation:isolate; }
+  /* position:sticky kept failing to stick on some mobile browsers/in-app
+     browsers no matter what we fixed around it, so the header now uses the
+     same bulletproof position:fixed technique as the bottom bar and cart
+     sheet (universally supported, no engine-specific quirks). #headerSpacer
+     below reserves the same height in normal flow so content doesn't jump
+     up underneath it. */
+  header{ position:fixed; top:0; left:0; right:0; max-width:480px; margin-left:auto; margin-right:auto; z-index:1000; border-bottom:1px solid rgba(178,34,34,0.08); transition:box-shadow .3s ease; isolation:isolate; }
   header::before{ content:""; position:absolute; inset:0; z-index:-1; background:rgba(255,248,241,0.92); backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px); }
   header.scrolled{ box-shadow:0 8px 22px rgba(0,0,0,.06); }
+  #headerSpacer{ width:100%; }
   .header-inner{ max-width:1400px; margin:0 auto; display:flex; align-items:center; justify-content:space-between; padding:10px 16px; gap:10px; }
   .logo{ display:flex; align-items:center; gap:9px; font-weight:800; font-size:17px; color:var(--primary); min-width:0; }
   .logo .logo-mark{ width:38px; height:38px; border-radius:50%; display:flex; align-items:center; justify-content:center; box-shadow:0 6px 14px rgba(178,34,34,.35); flex-shrink:0; overflow:hidden; }
@@ -425,6 +428,7 @@
     </div>
   </nav>
 </header>
+<div id="headerSpacer" aria-hidden="true"></div>
 
 <main id="main">
   <!-- ============ HERO ============ -->
@@ -942,7 +946,24 @@ document.addEventListener('DOMContentLoaded', () => {
   setupScrollReveal();
   setupHeaderScroll();
   setupHeroCarousel();
+  syncHeaderSpacer();
+  window.addEventListener('resize', syncHeaderSpacer);
+  window.addEventListener('load', syncHeaderSpacer);
 });
+
+/* Header is position:fixed (see CSS notes) so it no longer reserves space
+   in normal flow — this keeps a same-height spacer in sync so the hero
+   section doesn't jump up underneath it. */
+function syncHeaderSpacer(){
+  const header = document.getElementById('siteHeader');
+  const spacer = document.getElementById('headerSpacer');
+  if (!header) return;
+  if (spacer) spacer.style.height = header.offsetHeight + 'px';
+  /* Also reserve the same amount of space when jumping to a #section link
+     (e.g. tapping "Menu" in the nav), so the fixed header doesn't cover
+     the top of whatever section was just scrolled to. */
+  document.documentElement.style.scrollPaddingTop = header.offsetHeight + 'px';
+}
 
 /* ================= LANGUAGE ================= */
 function setLanguage(lang){
@@ -954,6 +975,7 @@ function setLanguage(lang){
   renderMenu();
   renderReviews();
   updateCartUI();
+  syncHeaderSpacer();
 }
 function applyLanguageStrings(lang){
   document.documentElement.lang = lang;
